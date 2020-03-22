@@ -15,6 +15,24 @@
 #include <Ark/Exceptions.hpp>
 #include <Ark/VM/UserType.hpp>
 
+#define ARK_MAX(a, b) ((a) > (b) ? (a) : (b))
+// getting the max size in bytes to store all of our data
+#define ARK_MAX_SIZE ARK_MAX(\
+    sizeof(double), \
+    ARK_MAX(\
+        sizeof(std::string), \
+        ARK_MAX(\
+            sizeof(PageAddr_t), \
+            ARK_MAX(\
+                sizeof(NFT), \
+                ARK_MAX(\
+                    sizeof(ProcType), \
+                    ARK_MAX(\
+                        sizeof(Closure), \
+                        ARK_MAX(\
+                            sizeof(UserType), \
+                            sizeof(std::vector<Value>))))))))
+
 namespace Ark
 {
     template<bool D> class VM_t;
@@ -39,11 +57,12 @@ namespace Ark::internal
     class Value
     {
     public:
-        using ProcType = std::function<Value (std::vector<Value>&)>;
-        using Iterator = std::vector<Value>::const_iterator;
-        using Value_t = std::variant<double, std::string, PageAddr_t, NFT, ProcType, Closure, UserType, std::vector<Value>>;
+        using ProcType  = std::function<Value (std::vector<Value>&)>;
+        using Iterator  = std::vector<Value>::const_iterator;
+        const std::size_t ValueSize = ARK_MAX_SIZE;
 
         Value();
+        ~Value();
 
         Value(ValueType type);
         Value(int value);
@@ -58,40 +77,18 @@ namespace Ark::internal
         Value(Closure&& value);
         Value(UserType&& value);
 
-        inline ValueType valueType() const
-        {
-            return m_type;
-        }
-
-        inline bool isFunction() const
-        {
-            return m_type == ValueType::PageAddr || m_type == ValueType::Closure || m_type == ValueType::CProc;
-        }
-
-        inline double number() const
-        {
-            return std::get<double>(m_value);
-        }
-
-        inline const std::string& string() const
-        {
-            return std::get<std::string>(m_value);
-        }
-
-        inline const std::vector<Value>& const_list() const
-        {
-            return std::get<std::vector<Value>>(m_value);
-        }
-
-        inline const UserType& usertype() const
-        {
-            return std::get<UserType>(m_value);
-        }
+        inline ValueType valueType() const;
+        inline bool isFunction() const;
+        inline double number() const;
+        inline const std::string& string() const;
+        inline const std::vector<Value>& const_list() const;
+        inline const UserType& usertype() const;
 
         std::vector<Value>& list();
         std::string& string_ref();
         UserType& usertype_ref();
 
+        // utilities working only with lists
         void push_back(const Value& value);
         void push_back(Value&& value);
 
@@ -106,90 +103,30 @@ namespace Ark::internal
         template<bool D> friend class Ark::VM_t;
 
     private:
-        Value_t m_value;
+        uint8_t m_data[ARK_MAX_SIZE];
+        void* m_value;
         ValueType m_type;
         bool m_const;
+
         Ark::VM_t<false>* m_vmf = nullptr;
         Ark::VM_t<true>* m_vmt = nullptr;
 
-        inline PageAddr_t pageAddr() const
-        {
-            return std::get<PageAddr_t>(m_value);
-        }
-
-        inline NFT nft() const
-        {
-            return std::get<NFT>(m_value);
-        }
-
-        inline const ProcType& proc() const
-        {
-            return std::get<Value::ProcType>(m_value);
-        }
-
-        inline const Closure& closure() const
-        {
-            return std::get<Closure>(m_value);
-        }
-
+        inline PageAddr_t pageAddr() const;
+        inline NFT nft() const;
+        inline const ProcType& proc() const;
+        inline const Closure& closure() const;
         Closure& closure_ref();
+
+        // the vm is registered as a pointer when a call instruction is met
+        // because plugins needs to access the vm to run some function calls
         void registerVM(Ark::VM_t<false>* vm);
         void registerVM(Ark::VM_t<true>* vm);
     };
-
-    inline bool operator==(const Value::ProcType& f, const Value::ProcType& g)
-    {
-        return f.template target<Value (const std::vector<Value>&)>() == g.template target<Value (const std::vector<Value>&)>();
-    }
-
-    inline bool operator==(const Value& A, const Value& B)
-    {
-        // values should have the same type
-        if (A.m_type != B.m_type)
-            return false;
-        
-        return A.m_value == B.m_value;
-    }
-
-    inline bool operator<(const Value& A, const Value& B)
-    {
-        if (A.m_type != B.m_type)
-            return (static_cast<int>(A.m_type) - static_cast<int>(B.m_type)) < 0;
-        return A.m_value < B.m_value;
-    }
-
-    inline bool operator!=(const Value& A, const Value& B)
-    {
-        return !(A == B);
-    }
-
-    inline bool operator!(const Value& A)
-    {
-        switch (A.valueType())
-        {
-            case ValueType::List:
-                return A.const_list().empty();
-            
-            case ValueType::Number:
-                return !A.number();
-            
-            case ValueType::String:
-                return A.string().empty();
-            
-            case ValueType::NFT:
-            {
-                if (A.nft() == NFT::True)
-                    return false;
-                return true;
-            }
-
-            case ValueType::User:
-                return A.usertype().not_();
-            
-            default:
-                return false;
-        }
-    }
+    
+    #include "Value.inl"
 }
+
+#undef ARK_MAX
+#undef ARK_MAX_SIZE
 
 #endif
