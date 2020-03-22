@@ -2,6 +2,7 @@
 #include <array>
 #include <random>
 #include <benchmark/benchmark.h>
+#include <any>
 
 using namespace std;
 
@@ -106,6 +107,66 @@ static void TradeSpaceForPerformance(benchmark::State& state) {
 }
 // Register the function as a benchmark
 BENCHMARK(TradeSpaceForPerformance);
+
+static void Any(benchmark::State& state) {
+
+  std::any value;
+  int index = 0;
+
+  auto ran_arr = get_random_array<50>();
+  int r = 0;
+
+  auto pick_randomly = [&] () {
+    index = (ran_arr[r % ran_arr.size()]);
+    r++;
+
+    switch (index)
+    {
+      case 0:
+        value = One();
+        break;
+      case 1:
+        value = Two();
+        break;
+      case 2:
+        value = Three();
+        break;
+      case 3:
+        value = Four();
+        break;
+    }
+  };
+
+  pick_randomly();
+
+
+  for (auto _ : state) {
+
+    int res;
+    switch (index) {
+      case 0:
+        res = std::any_cast<One>(value).get();
+        break;
+      case 1:
+        res = std::any_cast<Two>(value).get();
+        break;
+      case 2:
+        res = std::any_cast<Three>(value).get();
+        break;
+      case 3:
+        res = std::any_cast<Four>(value).get();
+        break;
+    }
+    
+    benchmark::DoNotOptimize(index);
+    benchmark::DoNotOptimize(res);
+
+    pick_randomly();
+  }
+
+}
+// Register the function as a benchmark
+BENCHMARK(Any);
 
 #define CMAX(a, b) (((a) > (b)) ? (a) : (b))
 

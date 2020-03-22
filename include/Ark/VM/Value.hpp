@@ -64,6 +64,8 @@ namespace Ark::internal
         Value(const Value& other);
         ~Value();
 
+        Value& operator=(const Value& other);
+
         Value(ValueType type);
         Value(int value);
         Value(float value);
@@ -107,6 +109,8 @@ namespace Ark::internal
         void* m_value;
         ValueType m_type;
         bool m_const;
+
+        inline void copyValue(const Value& other);
 
         Ark::VM_t<false>* m_vmf = nullptr;
         Ark::VM_t<true>* m_vmt = nullptr;

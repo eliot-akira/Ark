@@ -1,3 +1,86 @@
+#define INIT_VAL(type, data) static_cast<void*>(new (&data) (type))
+#define GET_VAL(type, val) (*static_cast<type*>(val))
+
+inline void Value::copyValue(const Value& other)
+{
+    if (other.m_value == nullptr)
+        return;
+
+    m_type = other.m_type;
+    m_const = other.m_const;
+
+    switch (m_type)
+    {
+        case ValueType::List:
+        {
+            m_value = INIT_VAL(std::vector<Value>, m_data);
+
+            std::vector<Value>* ptr  = static_cast<std::vector<Value>*>(m_value);
+            std::vector<Value>* copy = static_cast<std::vector<Value>*>(other.m_value);
+
+            ptr->reserve(copy->size());
+            for (std::size_t i=0; i < copy->size(); ++i)
+                (*ptr)[i] = (*copy)[i];
+
+            break;
+        }
+
+        case ValueType::Number:
+        {
+            m_value = INIT_VAL(double, m_data);
+            GET_VAL(double, m_value) = GET_VAL(double, other.m_value);
+            break;
+        }
+
+        case ValueType::String:
+        {
+            m_value = INIT_VAL(std::string, m_data);
+            GET_VAL(std::string, m_value) = GET_VAL(std::string, other.m_value);
+            break;
+        }
+
+        case ValueType::PageAddr:
+        {
+            m_value = INIT_VAL(PageAddr_t, m_data);
+            GET_VAL(PageAddr_t, m_value) = GET_VAL(PageAddr_t, other.m_value);
+            break;
+        }
+
+        case ValueType::NFT:
+        {
+            m_value = INIT_VAL(NFT, m_data);
+            GET_VAL(NFT, m_value) = GET_VAL(NFT, other.m_value);
+            break;
+        }
+
+        case ValueType::CProc:
+        {
+            m_value = INIT_VAL(Value::ProcType, m_data);
+            GET_VAL(Value::ProcType, m_value) = GET_VAL(Value::ProcType, other.m_value);
+            break;
+        }
+
+        case ValueType::Closure:
+        {
+            m_value = INIT_VAL(Closure, m_data);
+            GET_VAL(Closure, m_value) = GET_VAL(Closure, other.m_value);
+            break;
+        }
+
+        case ValueType::User:
+        {
+            m_value = INIT_VAL(UserType, m_data);
+            GET_VAL(UserType, m_value) = GET_VAL(UserType, other.m_value);
+            break;
+        }
+
+        default:
+            break;
+    }
+}
+
+#undef INIT_VAL
+
 inline ValueType Value::valueType() const
 {
     return m_type;
@@ -9,8 +92,6 @@ inline bool Value::isFunction() const
 }
 
 // getters
-
-#define GET_VAL(type, val) (*static_cast<type*>(val))
 
 inline double Value::number() const
 {
@@ -93,6 +174,8 @@ inline bool operator==(const Value& A, const Value& B)
         case ValueType::User:
             return A.usertype() == B.usertype();
     }
+
+    return false;
 }
 
 inline bool operator<(const Value& A, const Value& B)
@@ -128,6 +211,8 @@ inline bool operator<(const Value& A, const Value& B)
         case ValueType::User:
             return A.usertype() < B.usertype();
     }
+
+    return false;
 }
 
 inline bool operator!=(const Value& A, const Value& B)

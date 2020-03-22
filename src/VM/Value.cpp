@@ -9,73 +9,14 @@
 
 namespace Ark::internal
 {
-    Value::Value()
+    Value::Value() :
+        m_value(nullptr), m_type(ValueType::NFT), m_const(false)
     {}
 
     Value::Value(const Value& other) :
-        m_type(other.m_type), m_const(other.m_const)
+        m_value(nullptr)
     {
-        switch (m_type)
-        {
-            case ValueType::List:
-            {
-                m_value = INIT_VAL(std::vector<Value>, m_data);
-                GET_VAL(std::vector<Value>, m_value) = GET_VAL(std::vector<Value>, other.m_value);
-                break;
-            }
-
-            case ValueType::Number:
-            {
-                m_value = INIT_VAL(double, m_data);
-                GET_VAL(double, m_value) = GET_VAL(double, other.m_value);
-                break;
-            }
-
-            case ValueType::String:
-            {
-                m_value = INIT_VAL(std::string, m_data);
-                GET_VAL(std::string, m_value) = GET_VAL(std::string, other.m_value);
-                break;
-            }
-
-            case ValueType::PageAddr:
-            {
-                m_value = INIT_VAL(PageAddr_t, m_data);
-                GET_VAL(PageAddr_t, m_value) = GET_VAL(PageAddr_t, other.m_value);
-                break;
-            }
-
-            case ValueType::NFT:
-            {
-                m_value = INIT_VAL(NFT, m_data);
-                GET_VAL(NFT, m_value) = GET_VAL(NFT, other.m_value);
-                break;
-            }
-
-            case ValueType::CProc:
-            {
-                m_value = INIT_VAL(Value::ProcType, m_data);
-                GET_VAL(Value::ProcType, m_value) = GET_VAL(Value::ProcType, other.m_value);
-                break;
-            }
-
-            case ValueType::Closure:
-            {
-                m_value = INIT_VAL(Closure, m_data);
-                GET_VAL(Closure, m_value) = GET_VAL(Closure, other.m_value);
-                break;
-            }
-
-            case ValueType::User:
-            {
-                m_value = INIT_VAL(UserType, m_data);
-                GET_VAL(UserType, m_value) = GET_VAL(UserType, other.m_value);
-                break;
-            }
-
-            default:
-                break;
-        }
+        copyValue(other);
     }
 
     Value::~Value()
@@ -111,13 +52,25 @@ namespace Ark::internal
                     // PageAddr (uint16_t)
                     break;
             }
+
+            m_value = nullptr;
         }
+    }
+
+    Value& Value::operator=(const Value& other)
+    {
+        // avoid case like a = a
+        if (&other == this)
+            return *this;
+        
+        copyValue(other);
+        return *this;
     }
 
     // --------------------------
 
     Value::Value(ValueType type) :
-        m_type(type), m_const(false)
+        m_value(nullptr), m_type(type), m_const(false)
     {
         if (m_type == ValueType::List)
             m_value = INIT_VAL(std::vector<Value>, m_data);

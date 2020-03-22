@@ -138,7 +138,7 @@ int VM_t<debug>::safeRun(std::size_t untilFrameCount)
         Value("Nil"), Value("Bool"), Value("Undefined")
     };
     
-    try {
+    //try {
         m_running = true;
         while (m_running && m_frames.size() > m_until_frame_count)
         {
@@ -847,7 +847,7 @@ int VM_t<debug>::safeRun(std::size_t untilFrameCount)
             // move forward
             ++m_ip;
         }
-    } catch (const std::exception& e) {
+    /*} catch (const std::exception& e) {
         std::cerr << "\n" << termcolor::red << e.what() << "\n";
         std::cerr << termcolor::reset << "At IP: " << (m_ip != -1 ? m_ip : 0) << ", PP: " << m_pp << "\n";
 
@@ -884,7 +884,7 @@ int VM_t<debug>::safeRun(std::size_t untilFrameCount)
     } catch (...) {
         std::cerr << "Unknown error" << std::endl;
         return 1;
-    }
+    }*/
     return 0;
 }
 
