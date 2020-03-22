@@ -13,6 +13,72 @@ namespace Ark::internal
     Value::Value()
     {}
 
+    Value::Value(const Value& other) :
+        m_type(other.m_type), m_const(other.m_const)
+    {
+        switch (m_type)
+        {
+            case ValueType::List:
+            {
+                m_value = INIT_VAL(std::vector<Value>, m_data);
+                GET_VAL(std::vector<Value>, m_value) = GET_VAL(std::vector<Value>, other.m_value);
+                break;
+            }
+
+            case ValueType::Number:
+            {
+                m_value = INIT_VAL(double, m_data);
+                GET_VAL(double, m_value) = GET_VAL(double, other.m_value);
+                break;
+            }
+
+            case ValueType::String:
+            {
+                m_value = INIT_VAL(std::string, m_data);
+                GET_VAL(std::string, m_value) = GET_VAL(std::string, other.m_value);
+                break;
+            }
+
+            case ValueType::PageAddr:
+            {
+                m_value = INIT_VAL(PageAddr_t, m_data);
+                GET_VAL(PageAddr_t, m_value) = GET_VAL(PageAddr_t, other.m_value);
+                break;
+            }
+
+            case ValueType::NFT:
+            {
+                m_value = INIT_VAL(NFT, m_data);
+                GET_VAL(NFT, m_value) = GET_VAL(NFT, other.m_value);
+                break;
+            }
+
+            case ValueType::CProc:
+            {
+                m_value = INIT_VAL(Value::ProcType, m_data);
+                GET_VAL(Value::ProcType, m_value) = GET_VAL(Value::ProcType, other.m_value);
+                break;
+            }
+
+            case ValueType::Closure:
+            {
+                m_value = INIT_VAL(Closure, m_data);
+                GET_VAL(Closure, m_value) = GET_VAL(Closure, other.m_value);
+                break;
+            }
+
+            case ValueType::User:
+            {
+                m_value = INIT_VAL(UserType, m_data);
+                GET_VAL(UserType, m_value) = GET_VAL(UserType, other.m_value);
+                break;
+            }
+
+            default:
+                break;
+        }
+    }
+
     Value::~Value()
     {
         if (m_value != nullptr)
@@ -28,12 +94,12 @@ namespace Ark::internal
                     break;
                 
                 case ValueType::String:
-                    DESTROY_VAL(std::vector<Value>, m_value);
+                    DESTROY_VAL(string, m_value);
                     break;
                 
                 case ValueType::CProc:
                     // function<Value (std::vector<Value>&)> == ProcType
-                    DESTROY_VAL(function<Value (std::vector<Value>&)>, m_value);
+                    DESTROY_VAL(function<Value (vector<Value>&)>, m_value);
                     break;
                 
                 case ValueType::Closure:
@@ -110,7 +176,7 @@ namespace Ark::internal
     }
 
     Value::Value(std::vector<Value>&& value) :
-        m_value(std::vector<Value>), m_type(ValueType::List), m_const(false)
+        m_value(INIT_VAL(std::vector<Value>, m_data)), m_type(ValueType::List), m_const(false)
     {
         *static_cast<std::vector<Value>*>(m_value) = std::move(value);
     }

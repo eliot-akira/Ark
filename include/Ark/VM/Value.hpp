@@ -59,9 +59,9 @@ namespace Ark::internal
     public:
         using ProcType  = std::function<Value (std::vector<Value>&)>;
         using Iterator  = std::vector<Value>::const_iterator;
-        const std::size_t ValueSize = ARK_MAX_SIZE;
 
         Value();
+        Value(const Value& other);
         ~Value();
 
         Value(ValueType type);
