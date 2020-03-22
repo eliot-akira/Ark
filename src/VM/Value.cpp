@@ -6,7 +6,6 @@
 // using placement new to construct the type in the buffer
 #define INIT_VAL(type, data) static_cast<void*>(new (&data) (type))
 #define GET_VAL(type, val) (*static_cast<type*>(val))
-#define DESTROY_VAL(type, val) (static_cast<type*>(val)->~type())
 
 namespace Ark::internal
 {
@@ -83,31 +82,28 @@ namespace Ark::internal
     {
         if (m_value != nullptr)
         {
-            // because destructors are called like so: ptr->~type()
-            // so we can't write ptr->~std::vector<...>(), it wouldn't work
-            using namespace std;
-
             switch (m_type)
             {
                 case ValueType::List:
-                    DESTROY_VAL(vector<Value>, m_value);
+                    static_cast<std::vector<Value>*>(m_value)->~vector<Value>();
                     break;
                 
                 case ValueType::String:
-                    DESTROY_VAL(string, m_value);
+                // a std::string is really a std::basic_string<char>
+                    static_cast<std::string*>(m_value)->~basic_string();
                     break;
                 
                 case ValueType::CProc:
                     // function<Value (std::vector<Value>&)> == ProcType
-                    DESTROY_VAL(function<Value (vector<Value>&)>, m_value);
+                    static_cast<Value::ProcType*>(m_value)->~function<Value (std::vector<Value>&)>();
                     break;
                 
                 case ValueType::Closure:
-                    DESTROY_VAL(Closure, m_value);
+                    static_cast<Closure*>(m_value)->~Closure();
                     break;
                 
                 case ValueType::User:
-                    DESTROY_VAL(UserType, m_value);
+                    static_cast<UserType*>(m_value)->~UserType();
                     break;
                 
                 default:

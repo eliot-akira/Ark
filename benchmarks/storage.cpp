@@ -1,4 +1,5 @@
 #include <variant>
+#include <array>
 #include <random>
 #include <benchmark/benchmark.h>
 
@@ -548,3 +549,11 @@ static void Overload(benchmark::State& state) {
 
 }
 BENCHMARK(Overload);
+
+int main(int argc, char** argv)
+{
+    benchmark::Initialize(&argc, argv);
+    benchmark::RunSpecifiedBenchmarks();
+
+    return 0;
+}
